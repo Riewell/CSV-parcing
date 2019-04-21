@@ -36,7 +36,7 @@
 #include "csv_parcing.h"
 
 int next_file(struct files ***filePtr, FILE *temp_filePtr);
-int open_file(FILE **opened_file, char *filename, const char *extension, const char *mode);
+int open_file(FILE **opened_file, const char *filename, const char *extension, const char *mode);
 void close_files(struct files **filePtr);
 
 int open_files(char **raw_files, const char *extension, int quantity, struct files **filePtr)
@@ -222,7 +222,7 @@ int next_file(struct files ***filePtr, FILE *temp_filePtr)
 }
 
 //~ int open_file(FILE *opened_file, char *filename, const char *extension, const char *mode, const char *task)
-int open_file(FILE **opened_file, char *filename, const char *extension, const char *mode)
+int open_file(FILE **opened_file, const char *filename, const char *extension, const char *mode)
 {
 	//~ FILE *temp_file=NULL;
 	int string_lenght_1=strlen("Возникла проблема при открытии файла \n ");

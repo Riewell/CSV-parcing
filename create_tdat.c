@@ -46,34 +46,36 @@
 #include "csv_parcing.h"
 #include <ctype.h>
 
+int open_file(FILE **opened_file, const char *filename, const char *extension, const char *mode);
 int print_name(const char *category, char *temp_string, const char separator[0], const int offset, struct sections **section);
 int count(const char *category, char *temp_string, const char separator[0], const int offset);
 int next_element(struct sections **sectionPtr, const char *sec_name);
 
-int create_temp_file(const char *price_filename)
+int create_temp_file(const char *price_filename, int value_col)
 {
 	printf("Обработка файла \"%s\"...\n", price_filename);
 	//Открытие файла
 	FILE *price_file=NULL;
-	int string_lenght_1=strlen("Возникла проблема при открытии файла \n ");
-	int string_lenght_2=strlen(price_filename);
-	char *error_message=calloc(string_lenght_1+string_lenght_2*2+1, 1);
-	snprintf(error_message, string_lenght_1+string_lenght_2+1, "Возникла проблема при открытии файла \"%s\"\n %s", price_filename, price_filename);
-	if (!(price_file = fopen(price_filename, "r")))
+	//~ int string_lenght_1=strlen("Возникла проблема при открытии файла \n ");
+	//~ int string_lenght_2=strlen(price_filename);
+	//~ char *error_message=calloc(string_lenght_1+string_lenght_2*2+1, 1);
+	//~ snprintf(error_message, string_lenght_1+string_lenght_2+1, "Возникла проблема при открытии файла \"%s\"\n %s", price_filename, price_filename);
+	//~ if (!(price_file = fopen(price_filename, "r")))
+	if (open_file(&price_file, price_filename, ".csv", "r"))
 	{
-		perror(error_message);
+		//~ perror(error_message);
 		puts("Переход к следующему файлу...");
-		free(error_message);
+		//~ free(error_message);
 		return 1;
 	}
-	free(error_message);
-	error_message=NULL;
+	//~ free(error_message);
+	//~ error_message=NULL;
 	//Открытие служебного файла, в который записывается информация о последних обработанных файлах
 	//(если служебный файл не существует - он будет создан)
 	FILE *dat_file=NULL;
-	string_lenght_1=strlen("Возникла проблема при открытии служебного файла \n ");
-	string_lenght_2=strlen(DATA_FILE);
-	error_message=calloc(string_lenght_1+string_lenght_2*2+1, 1);
+	int string_lenght_1=strlen("Возникла проблема при открытии служебного файла \n ");
+	int string_lenght_2=strlen(DATA_FILE);
+	char *error_message=calloc(string_lenght_1+string_lenght_2*2+1, 1);
 	snprintf(error_message, string_lenght_1+string_lenght_2+1, "Возникла проблема при открытии файла \"%s\"\n %s", DATA_FILE, DATA_FILE);
 	//Если системный файл не удаётся открыть для чтения - выполняется попытка его создания,
 	//после чего будет снова предпринята попытка его открытия в режиме для чтения
@@ -239,8 +241,12 @@ int create_temp_file(const char *price_filename)
 		//исключаем их из сравнения
 		if (category[0] == '"')
 			offset++;
-		//Поиск названия раздела по шаблону "ЦифраЦифраТочкаПробел"
-		if (isdigit(category[offset]) && isdigit(category[offset+1]) && category[offset+2] == '.' && category[offset+3] == ' ')
+		//~ //Поиск названия раздела по шаблону "ЦифраЦифраТочкаПробел"
+		//~ if (isdigit(category[offset]) && isdigit(category[offset+1]) && category[offset+2] == '.' && category[offset+3] == ' ')
+		//Поиск названия раздела по шаблону "ЦифраТочкаПробел" - x0._x,
+		//при условии, что найденная подстрока находится до первого разделителя
+		int before_point=strcspn(category, ".");
+		if (isdigit(category[before_point-1]) && (category[before_point+1] == ' ') && (before_point < strcspn(category, &separator[0])))
 		{
 			if (cat_count)
 			{
@@ -295,9 +301,14 @@ int create_temp_file(const char *price_filename)
 				return 2;
 			continue;
 		}
-		//Поиск названия подраздела по шаблону "ЦифраЦифраТочкаЦифраЦифраПробел"
-		if (isdigit(category[offset]) && isdigit(category[offset+1]) && category[offset+2] == '.' && isdigit(category[offset+3]) && isdigit(category[offset+4]) && category[offset+5] == ' ')
+		//~ //Поиск названия подраздела по шаблону "ЦифраЦифраТочкаЦифраЦифраПробел"
+		//~ if (isdigit(category[offset]) && isdigit(category[offset+1]) && category[offset+2] == '.' && isdigit(category[offset+3]) && isdigit(category[offset+4]) && category[offset+5] == ' ')
+		//Поиск названия подраздела по шаблону "ЦифраТочкаЦифраЦифраПробел" - x0.00_x,
+		//при условии, что найденная подстрока находится до первого разделителя
+		if (isdigit(category[before_point-1]) && (strcspn(&category[before_point+1], " ") < strcspn(&category[before_point+1], ".")) && (before_point < strcspn(category, &separator[0])))
 		{
+			if (!strncmp(category, "0.08 ", 5))
+				puts("!");
 			//Если счётчик был ранее исключён - возвращаем его в строй
 			if (sub_count < 0)
 				sub_count=0;
@@ -366,7 +377,7 @@ int create_temp_file(const char *price_filename)
 				//~ puts("!");
 			//Колонка остатков
 			//TODO: перенести в настройки
-			int value_col=6;
+			//~ int value_col=6;
 			for (int i=1; i < value_col-1; i++) //колонка кода уже пройдена, поиск начала колонки остатков
 			{
 				//~ printf("%s\n", &category[before_separator]);
