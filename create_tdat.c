@@ -107,8 +107,9 @@ int create_temp_file(const char *price_filename)
 			int before_separator=strcspn(tmp_filename, " ");
 			if (before_separator < strlen(tmp_filename))
 			{
-				char *temp_string=calloc(strlen(tmp_filename)-before_separator, 1);
-				strncpy(temp_string, &tmp_filename[before_separator], strlen(tmp_filename));
+				char *temp_string=calloc(strlen(tmp_filename)-before_separator-1, 1);
+				//Копирование подстроки с номером следующего файла, без промежуточного пробела и символа перевода строки
+				strncpy(temp_string, &tmp_filename[before_separator+1], (strlen(tmp_filename)-before_separator-2));
 				memset(tmp_filename, 0, 100);
 				strncpy(tmp_filename, temp_string, strlen(temp_string));
 				//TODO: переделать на strtol
