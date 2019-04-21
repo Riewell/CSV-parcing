@@ -55,7 +55,7 @@ int open_files(char **raw_files, const char *extension, int quantity, struct fil
 				{
 					char *temp_string=calloc(substring_end-substring_start+1, 1);
 					strncpy(temp_string, &raw_files[i][substring_start], substring_end-substring_start);
-					temp_string[substring_end-substring_start+1]='\000';
+					temp_string[substring_end-substring_start]='\000';
 					substring_start=substring_end+1;
 					substring_end=substring_start+(strcspn(&raw_files[i][substring_start], "-,;:&*/\\"));
 					if (raw_files[i][substring_end] == '-')
@@ -67,7 +67,7 @@ int open_files(char **raw_files, const char *extension, int quantity, struct fil
 					}
 					char *temp_string_2=calloc(substring_end-substring_start+1, 1);
 					strncpy(temp_string_2, &raw_files[i][substring_start], substring_end-substring_start);
-					temp_string_2[substring_end-substring_start+1]='\000';
+					temp_string_2[substring_end-substring_start]='\000';
 					int digit_name_1=0;
 					int digit_name_2=0;
 					digit_name_1=atoi(temp_string);
@@ -153,7 +153,7 @@ int open_files(char **raw_files, const char *extension, int quantity, struct fil
 				{
 					char *temp_string=calloc(substring_end-substring_start+1, 1);
 					strncpy(temp_string, &raw_files[i][substring_start], substring_end-substring_start);
-					temp_string[substring_end-substring_start+1]='\000';
+					temp_string[substring_end-substring_start]='\000';
 					if (open_file(&temp_file, temp_string, extension, "r"))
 					{
 						close_files(filePtr);

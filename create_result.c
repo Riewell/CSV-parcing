@@ -329,33 +329,37 @@ int create_result(char **raw_files, int quantity, const char *extension)
 		char *tmp_filename=calloc(100, 1);
 		char temp_string_2[18]={""};
 		int lenght_string_2=0;
+		if (!strcmp(extension, ".adat"))
+		{
+			strncpy(temp_string_2, "last_average_file", 17);
+			lenght_string_2=17;
+		}
+		if (!strcmp(extension, ".csv"))
+		{
+			strncpy(temp_string_2, "last_result_file", 16);
+			lenght_string_2=16;
+		}
 		do
 		{
 			fgets(tmp_filename, 100, dat_file);
-			if (!strcmp(extension, ".adat"))
-			{
-				strncpy(temp_string_2, "last_average_file", 17);
-				lenght_string_2=17;
-			}
-			if (!strcmp(extension, ".csv"))
-			{
-				strncpy(temp_string_2, "last_result_file", 16);
-				lenght_string_2=16;
-			}
 			if (!strncmp(tmp_filename, temp_string_2, lenght_string_2))
 			{
 				int before_separator=strcspn(tmp_filename, " ");
 				if (before_separator < strlen(tmp_filename))
 				{
-					char *temp_string=calloc(strlen(tmp_filename)-before_separator, 1);
-					strncpy(temp_string, &tmp_filename[before_separator], strlen(tmp_filename));
+					char *temp_string=calloc(strlen(tmp_filename)-before_separator-1, 1);
+					//Копирование подстроки с номером следующего файла, без промежуточного пробела и символа перевода строки
+					strncpy(temp_string, &tmp_filename[before_separator+1], (strlen(tmp_filename)-before_separator-2));
 					memset(tmp_filename, 0, 100);
 					strncpy(tmp_filename, temp_string, strlen(temp_string));
 					//TODO: переделать на strtol
 					int tmp_name=atoi(tmp_filename);
 					tmp_name++;
 					memset(tmp_filename, 0, 100);
-					snprintf(tmp_filename, 100, "%d%s", tmp_name, extension);
+					if (!strcmp(extension, ".adat"))
+						snprintf(tmp_filename, 100, "%d%s", tmp_name, extension);
+					if (!strcmp(extension, ".csv"))
+						snprintf(tmp_filename, 100, "result-%d%s", tmp_name, extension);
 					free(temp_string);
 					temp_string=NULL;
 					break;
