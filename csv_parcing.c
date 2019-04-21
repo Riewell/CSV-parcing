@@ -29,7 +29,7 @@
 #include "csv_parcing.h"
 
 void print_help(const char *program_title, const int help_size);
-int create_temp_file(const char *price_file);
+int create_temp_file(const char *price_file, int value_col);
 int create_result(char **raw_files, int quantity, const char *extension);
 
 int main(int argc, char **argv)
@@ -56,72 +56,111 @@ int main(int argc, char **argv)
 				return 0;
 			}
 		}
-		if (!strncmp(argv[1], "-o", 2) || !strncmp(argv[1], "--open", 6))
+		for (int i = 1; i < argc; i++)
 		{
-			if (argc == 2)
+			int value_col=7; //колонка с ценами по умолчанию
+			if (!strncmp(argv[i], "-o", 2) || !strncmp(argv[i], "--open", 6))
 			{
-				puts("Не указан файл для обработки!");
-				return 1;
-			}
-			int result=create_temp_file(argv[2]);
-			return result;
-		}
-		else if (!strncmp(argv[1], "-a", 2) || !strncmp(argv[1], "--average", 11))
-		{
-			if (argc == 2)
-			{
-				puts("Не указаны файлы для обработки!");
-				return 1;
-			}
-			//Количество актуальных параметров-значений, которые будут переданы для дальнейшей обработки
-			int quantity;
-			//Название программы и первый агумент (подразумевается данная команда "-a") пропускаются
-			for (quantity=2; quantity < argc; quantity++)
-			{
-				//Если указана ещё какая-нибудь команда (включая текущую) -
-				//она и её параметры-значения будут проигнорированы и отброшены
-				if ((!strncmp(argv[quantity], "-o\000", 3) || !strncmp(argv[quantity], "--open\000", 7)) || \
-				(!strncmp(argv[quantity], "-a\000", 3) || !strncmp(argv[quantity], "--average\000", 7)) || \
-				(!strncmp(argv[quantity], "-c\000", 3) || !strncmp(argv[quantity], "--combine\000", 10)))
+				if (argc == 2)
 				{
-					printf("Команда проигнорирована: %s.\nВсе последующие параметры не учтены и не обработаны.\n", argv[quantity]);
-					break;
+					puts("Не указан файл для обработки!");
+					return 1;
 				}
-			}
-			int result=create_result(argv, quantity-2, ".adat");
-			return result;
-		}
-		else if (!strncmp(argv[1], "-c", 2) || !strncmp(argv[1], "--combine", 9))
-		{
-			if (argc == 2)
-			{
-				puts("Не указаны файлы для обработки!");
-				return 1;
-			}
-			//Количество актуальных параметров-значений, которые будут переданы для дальнейшей обработки
-			int quantity;
-			//Название программы и первый агумент (подразумевается данная команда "-a") пропускаются
-			for (quantity=2; quantity < argc; quantity++)
-			{
-				//Если указана ещё какая-нибудь команда (включая текущую) -
-				//она и её параметры-значения будут проигнорированы и отброшены
-				if ((!strncmp(argv[quantity], "-o\000", 3) || !strncmp(argv[quantity], "--open\000", 7)) || \
-				(!strncmp(argv[quantity], "-a\000", 3) || !strncmp(argv[quantity], "--average\000", 7)) || \
-				(!strncmp(argv[quantity], "-c\000", 3) || !strncmp(argv[quantity], "--combine\000", 10)))
+				for (int j = 1; j < argc; j++)
 				{
-					printf("Команда проигнорирована: %s.\nВсе последующие параметры не учтены и не обработаны.\n", argv[quantity]);
-					break;
+					if (!strncmp(argv[j], "-v", 2) || !strncmp(argv[j], "--value-column", 14))
+					{
+						if (j+1 == argc)
+						{
+							puts("Не указан столбец для обработки!");
+							return 1;
+						}
+						long int temp_val=strtol(argv[j+1], NULL, 10);
+						if (!temp_val || (temp_val > 1000))
+						{
+							printf("Значение '%s' параметра %s непонятно. Завершение работы.\n", argv[j+1], argv[j]);
+							return 1;
+						}
+						value_col=(int)temp_val;
+					}
 				}
+				int result=create_temp_file(argv[i+1], value_col);
+				return result;
 			}
-			int result=create_result(argv, quantity-2, ".csv");
-			return result;
-			//~ return 0;
-		}
-		else
-		{
-			printf("Неверный параметр запуска \"%s\"\n", argv[1]);
-			print_help(argv[0], 0);
-			return 0;
+			else if (!strncmp(argv[i], "-a", 2) || !strncmp(argv[i], "--average", 11))
+			{
+				if (argc == 2)
+				{
+					puts("Не указаны файлы для обработки!");
+					return 1;
+				}
+				//Количество актуальных параметров-значений, которые будут переданы для дальнейшей обработки
+				int quantity;
+				//Название программы и первый агумент (подразумевается данная команда "-a") пропускаются
+				for (quantity=2; quantity < argc; quantity++)
+				{
+					//Если указана ещё какая-нибудь команда (включая текущую) -
+					//она и её параметры-значения будут проигнорированы и отброшены
+					if ((!strncmp(argv[quantity], "-o\000", 3) || !strncmp(argv[quantity], "--open\000", 7)) || \
+					(!strncmp(argv[quantity], "-a\000", 3) || !strncmp(argv[quantity], "--average\000", 7)) || \
+					(!strncmp(argv[quantity], "-c\000", 3) || !strncmp(argv[quantity], "--combine\000", 10)) || \
+					(!strncmp(argv[quantity], "-v\000", 3) || !strncmp(argv[quantity], "--value-column\000", 15)))
+					{
+						printf("Команда проигнорирована: %s.\nВсе последующие параметры не учтены и не обработаны.\n", argv[quantity]);
+						break;
+					}
+				}
+				int result=create_result(argv, quantity-2, ".adat");
+				return result;
+			}
+			else if (!strncmp(argv[i], "-c", 2) || !strncmp(argv[i], "--combine", 9))
+			{
+				if (argc == 2)
+				{
+					puts("Не указаны файлы для обработки!");
+					return 1;
+				}
+				//Количество актуальных параметров-значений, которые будут переданы для дальнейшей обработки
+				int quantity;
+				//Название программы и первый агумент (подразумевается данная команда "-a") пропускаются
+				for (quantity=2; quantity < argc; quantity++)
+				{
+					//Если указана ещё какая-нибудь команда (включая текущую) -
+					//она и её параметры-значения будут проигнорированы и отброшены
+					if ((!strncmp(argv[quantity], "-o\000", 3) || !strncmp(argv[quantity], "--open\000", 7)) || \
+					(!strncmp(argv[quantity], "-a\000", 3) || !strncmp(argv[quantity], "--average\000", 7)) || \
+					(!strncmp(argv[quantity], "-c\000", 3) || !strncmp(argv[quantity], "--combine\000", 10)) || \
+					(!strncmp(argv[quantity], "-v\000", 3) || !strncmp(argv[quantity], "--value-column\000", 15)))
+					{
+						printf("Команда проигнорирована: %s.\nВсе последующие параметры не учтены и не обработаны.\n", argv[quantity]);
+						break;
+					}
+				}
+				int result=create_result(argv, quantity-2, ".csv");
+				return result;
+				//~ return 0;
+			}
+			else if (!strncmp(argv[i], "-v", 2) || !strncmp(argv[i], "--value-column", 14))
+			{
+				if (i+1 == argc)
+				{
+					puts("Не указан столбец для обработки!");
+					return 1;
+				}
+				long int temp_val=strtol(argv[i+1], NULL, 10);
+				if (!temp_val || (temp_val > 1000))
+				{
+					printf("Значение '%s' параметра %s непонятно. Завершение работы.\n", argv[i+1], argv[i]);
+					return 1;
+				}
+				value_col=(int)temp_val;
+			}
+			else
+			{
+				printf("Неверный параметр запуска \"%s\"\n", argv[i]);
+				print_help(argv[0], 0);
+				return 0;
+			}
 		}
 	}
 	return 0;

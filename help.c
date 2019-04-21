@@ -35,7 +35,8 @@ void print_help(const char *program_title, const int help_size)
 	
 	//Вывод форматированной краткой справки (для параметра "-h")
 	//Последняя строка ("[-h|--help]") обрабатывается и выводится отдельно, а также служит признаком конца массива
-	char *help_strings[]={"[-o ФАЙЛ|--open ФАЙЛ]",
+	char *help_strings[]={"[-v ЗНАЧЕНИЕ|--value-column ЗНАЧЕНИЕ]",
+						"[-o ФАЙЛ|--open ФАЙЛ]",
 						"[-a ФАЙЛЫ|--average ФАЙЛЫ]",
 						"[-c ФАЙЛЫ|--combine ФАЙЛЫ]",
 						"[-h|--help]"};

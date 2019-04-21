@@ -45,7 +45,7 @@
 #include "csv_parcing.h"
 
 int open_files(char **raw_files, const char *extension, int quantity, struct files **filePtr);
-int open_file(FILE **opened_file, char *filename, const char *extension, const char *mode);
+int open_file(FILE **opened_file, const char *filename, const char *extension, const char *mode);
 void close_files(struct files **filePtr);
 
 int create_result(char **raw_files, int quantity, const char *extension)
