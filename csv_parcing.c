@@ -2,7 +2,7 @@
 
   Обработка нескольких файлов csv для получения средних
   количественных остатков в определённой колонке/столбце.
-  Version 0.8
+  Version 0.9.2
 
   Copyright 2017 Konstantin Zyryanov <post.herzog@gmail.com>
   
@@ -154,6 +154,7 @@ int main(int argc, char **argv)
 					return 1;
 				}
 				value_col=(int)temp_val;
+				i++; //для пропуска обработки значения данного параметра
 			}
 			else
 			{

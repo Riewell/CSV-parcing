@@ -2,7 +2,7 @@
 
   Обработка нескольких файлов csv для получения средних
   количественных остатков в определённой колонке/столбце.
-  Version 0.8
+  Version 0.9.2
 
   Copyright 2017 Konstantin Zyryanov <post.herzog@gmail.com>
   
@@ -230,12 +230,21 @@ int create_temp_file(const char *price_filename, int value_col)
 	int cat_count=0; //счётчик для категорий
 	int sub_count=-1; //счётчик для подкатегорий; отрицательная инициализация на случай остутствия подкатегории
 	int unit_count=0; //общий счётчик для номенклатурных позиций
+	//Возврат в начало файла, на случай, если разделитель был найде только в самом конце
+	if (fseek(price_file, 0, SEEK_SET))
+	{
+		perror("Ошибка обработки указанного файла");
+	}
 	while (!feof(price_file))
 	{
 		memset(category, 0, 2000);
 		memset(temp_string, 0, 2000);
 		struct sections *last_sectionPtr=NULL;
-		fgets(category, 2000, price_file);
+		//При неудачном считывании или считывании пустой строки происходит переход на следующую итерацию
+		if (!fgets(category, 2000, price_file))
+			continue;
+		if (!strlen(category))
+			continue;
 		int offset=0;
 		//При использовании в качестве разделителя ',' остальные запятые обрамляются в двойные кавычки -
 		//исключаем их из сравнения
@@ -307,8 +316,6 @@ int create_temp_file(const char *price_filename, int value_col)
 		//при условии, что найденная подстрока находится до первого разделителя
 		if (isdigit(category[before_point-1]) && (strcspn(&category[before_point+1], " ") < strcspn(&category[before_point+1], ".")) && (before_point < strcspn(category, &separator[0])))
 		{
-			if (!strncmp(category, "0.08 ", 5))
-				puts("!");
 			//Если счётчик был ранее исключён - возвращаем его в строй
 			if (sub_count < 0)
 				sub_count=0;
@@ -353,11 +360,28 @@ int create_temp_file(const char *price_filename, int value_col)
 				{
 					if (!(isdigit(temp_string[i])) && temp_string[i] != '-')
 					{
-						free(tile_string);
-						tile_string=NULL;
-						//~ continue;
-						unit_code=-1;
-						break;
+						short int check=0;
+						//Проверка на наличие лишних пробелов и табуляций в конце строки
+						if ((temp_string[i] == ' ') || (temp_string[i] == '\t'))
+						{
+							check=1;
+							for (int j=i+1; j < strlen(temp_string); j++)
+							{
+								if ((temp_string[j] != ' ') && (temp_string[j] != '\t'))
+								{
+									check=0;
+									break;
+								}
+							}
+						}
+						if (!check)
+						{
+							free(tile_string);
+							tile_string=NULL;
+							//~ continue;
+							unit_code=-1;
+							break;
+						}
 					}
 				}
 				//FIXME: для обхода описаной выше проблемы (в результате предыдущих преобразований
@@ -367,8 +391,11 @@ int create_temp_file(const char *price_filename, int value_col)
 				else if (!unit_code)
 					unit_code=1;
 			}
-			free(tile_string);
-			tile_string=NULL;
+			if (tile_string)
+			{
+				free(tile_string);
+				tile_string=NULL;
+			}
 		}
 		//Если код товара найден - обработка строки продолжается
 		if (unit_code)
@@ -444,21 +471,26 @@ int create_temp_file(const char *price_filename, int value_col)
 	//~ printf("(%d позиций в группе)\n", cat_count);
 	//~ printf("Обработка файла завершена (\"%s\")\nВсего %d позиций\n", price_filename, unit_count);
 	printf("Обработка файла завершена (\"%s\")\nВсего %d позиций\n", price_filename, unit_count);
-	free(category);
+	if (category)
+		free(category);
 	category=NULL;
 	//~ catPtr->sec_value=catPtr->sec_value+value;
-	int length=strlen(catPtr->sec_name);
-	if (strcspn(catPtr->sec_name, TMP_SEP) < length || strcspn(catPtr->sec_name, "\"") < length)
+	int length=0;
+	if (catPtr && (catPtr->sec_name))
 	{
-		fprintf(temp_file, "\"");
-		fprintf(temp_file, "%s\"%s", catPtr->sec_name, TMP_SEP);
-		fprintf(temp_file, "%d\n", catPtr->sec_value);
+		length=strlen(catPtr->sec_name);
+		if (strcspn(catPtr->sec_name, TMP_SEP) < length || strcspn(catPtr->sec_name, "\"") < length)
+		{
+			fprintf(temp_file, "\"");
+			fprintf(temp_file, "%s\"%s", catPtr->sec_name, TMP_SEP);
+			fprintf(temp_file, "%d\n", catPtr->sec_value);
+		}
+		else
+			fprintf(temp_file, "%s%s%d\n", catPtr->sec_name, TMP_SEP, catPtr->sec_value);
+		memset(catPtr, 0, sizeof(struct sections));
+		free(catPtr);
+		catPtr=NULL;
 	}
-	else
-		fprintf(temp_file, "%s%s%d\n", catPtr->sec_name, TMP_SEP, catPtr->sec_value);
-	memset(catPtr, 0, sizeof(struct sections));
-	free(catPtr);
-	catPtr=NULL;
 	if (subPtr)
 	{
 		struct sections *last_sectionPtr=NULL;
